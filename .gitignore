@@ -1,0 +1,10 @@
+# Relatórios com dados reais (IPs, e-mails, hostnames) — nunca publicar
+private/
+
+# Saídas de scan
+*.report.json
+reports/
+
+# Build
+/bin/
+/dist/

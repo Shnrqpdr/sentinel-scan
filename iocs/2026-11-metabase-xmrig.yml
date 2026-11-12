@@ -1,0 +1,79 @@
+# Indicadores de comprometimento observados no incidente de 2026-11.
+# Infraestrutura do ATACANTE (pode ser publicada). Dados da vítima removidos.
+# Formato pensado para ser carregado pelo sentinel-scan como regra de detecção.
+
+id: 2026-11-metabase-xmrig
+description: >
+  Metabase exposto + conexão com Postgres superuser → COPY FROM PROGRAM →
+  xmrig no /tmp do container do Postgres, com persistência no PGDATA.
+first_seen: 2026-08-10
+last_seen: 2026-11-09
+
+network:
+  mining_pools:
+    - pool.hashvault.pro:3333
+    - gulf.moneroocean.stream:443
+    - 205.172.58.170:80
+  oob_callbacks:            # exfiltração e verificação de alcance (DNS/HTTP out-of-band)
+    - "*.smartdnslog.com"
+    - oob.smartdnslog.com
+    - times.msciosoft365.org
+    - 109.104.154.238       # testado em UDP/53 e TCP/443
+  download_proxies:         # usados para baixar o xmrig do GitHub sem bater direto nele
+    - gh-proxy.com
+    - ghfast.top
+    - gitlab.com/api/v4/projects/54314161   # build aarch64 estático
+
+files:
+  # caminhos dentro do container (camada gravável)
+  container_tmp:
+    - /tmp/.sysd/kworker
+    - /tmp/.sysd/xmrig-*
+    - /tmp/.sysd/dl.sh
+    - /tmp/.sysd/.dl.pl
+    - /tmp/.xr/.khw
+    - /tmp/.xr/.tc
+    - /tmp/.sc/.kw
+    - /tmp/.ge.sh
+    - /tmp/.r.sh
+    - /tmp/.g2.sh
+    - /tmp/.px.sh
+    - /tmp/.ck.sh
+    - "/tmp/.mb_*"
+    - "/tmp/.w2_*"
+    - "/tmp/.eg_*"
+    - "/tmp/.ps_*"
+    - /var/tmp/.udev-notify
+  # persistência no volume de dados (sobrevive a recriar o container)
+  pgdata:
+    - .pgcache/re.sh
+    - .pgcache/.stamp
+    - ".ox_*.b"
+
+process_names:              # binário do minerador renomeado para se passar por algo do sistema
+  - kworker
+  - .khw
+  - .kw
+  - .udev-notify
+
+postgres:
+  rogue_roles:
+    - _svmaint
+  pg_hba_lines:
+    - "host all _svmaint 0.0.0.0/0 md5"
+
+metabase:
+  rogue_admin_email_patterns:
+    - "svc-backup-*@local.dev"
+    - "soc.backup.*@forensics.local"
+  notes: >
+    Chaves de API de admin criadas antes da primeira execução no Postgres.
+    O e-mail do admin legítimo foi sobrescrito com "<hex>:NOTFOUND".
+
+xmrig_signatures:
+  version: 6.21.3
+  config_markers:
+    - '"donate-level": 1'
+    - '"algo": "rx/0"'
+  sizes_bytes:
+    - 8285424   # xmrig 6.21.3 linux-static-x64
